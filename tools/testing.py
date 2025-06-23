@@ -2,8 +2,14 @@ from network import *
 
 test = Network()
 test.addLayers([
-    Linear(3, 1),
-    Linear(1, 1)
+    Linear(10, 7),
+    ReLU(),
+    Linear(7, 4),
+    ReLU()
 ])
 
-test.printNetwork()
+#print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+#test.printNetwork()
+
+print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+print(test.calculateOutput([1, 1, 1, 1, 1, 1, 1, 1, 1, 1]))
