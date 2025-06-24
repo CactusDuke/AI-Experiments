@@ -3,10 +3,10 @@ from network import *
 
 test = Network()
 test.addLayers([
-    Con2D(3, 3, [[1, -2]], 1),
+    Con2D(3, 3, [[1, 2]], 1),
     Flatten(),
-    Linear(6, 2),
-    LogSoftMax()
+    Linear(6, 9),
+    SoftMax()
 ])
 
 

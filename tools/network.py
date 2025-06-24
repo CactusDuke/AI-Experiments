@@ -17,24 +17,26 @@ class Network:
             for i in range(len(layers)):
                 if i < (len(layers) - 1):
                     if layers[i + 1].type == 0: #Base Layer Functions N -> N
-                        assert layers[i].outputSize != 0, f"Incorrect Output Format for layers {i}" #Checks that the correct output type exists
+                        assert hasattr(layers[i], "outputSize"), f"Incorrect Output Format for layer {i + 1}" #Checks that the correct output type exists
+                        assert layers[i].outputSize != 0, f"Incorrect Output Format for layer {i + 1}" #Checks that the correct output type exists
                         assert layers[i].outputSize == layers[i + 1].inputSize, f"Input/Output values do not match for layer {i}"
 
                     elif layers[i + 1].type == 1: #Activation functions N
-                        assert layers[i].outputSize != 0, f"Incorrect Output Format for layers {i}" #Checks that the correct output type exists
+                        assert hasattr(layers[i], "outputSize"), f"Incorrect Output Format for layer {i + 1}" #Checks that the correct output type exists
+                        assert layers[i].outputSize != 0, f"Output cannot be 0 Layer {i + 1}" #Checks that the correct output type exists
                         layers[i + 1].inputSize = layers[i].outputSize
                         layers[i + 1].outputSize = layers[i].outputSize
                     
                     elif layers[i + 1].type == 2: #Functions like Flatten. 2d -> 1d
-                        assert layers[i].outputSizeX != 0, f"Incorrect Output Format for layers {i}" #Checks that the correct output type exists
+                        assert hasattr(layers[i], "outputSizeX"), f"Incorrect Output Format for layer {i + 1}" #Checks that the correct output type exists
                         layers[i + 1].inputSizeX = layers[i].outputSizeX
                         layers[i + 1].inputSizeY = layers[i].outputSizeY
                         layers[i + 1].outputSize = layers[i].outputSizeY * layers[i].outputSizeX
 
                     elif layers[i + 1].type == 3: #2d Functions R2 -> R2
-                        assert layers[i].outputSizeX != 0, f"Incorrect Output Format for layers {i}" #Checks that the correct output type exists
-                        assert layers[i].outputSizeX == layers[i + 1].inputSizeX, f"Input/Output X values do not match for layer {i}"
-                        assert layers[i].outputSizeY == layers[i + 1].inputSizeY, f"Input/Output Y values do not match for layer {i}"
+                        assert hasattr(layers[i], "outputSizeX"), f"Incorrect Output Format for layer {i + 1}" #Checks that the correct output type exists
+                        assert layers[i].outputSizeX == layers[i + 1].inputSizeX, f"Input/Output X values do not match for layer {i + 1}"
+                        assert layers[i].outputSizeY == layers[i + 1].inputSizeY, f"Input/Output Y values do not match for layer {i + 1}"
 
                 self.layerList.append(layers[i])
         except Exception as error:
@@ -111,7 +113,7 @@ class ReLU:
         
     def run(self, inputV):
         output = []
-        for i in inputV[0]:
+        for i in inputV:
             output.append(float(max(0, i))) #Max between 0 and the value
 
         return(output)
@@ -237,6 +239,54 @@ class Con2D:
                 for i in range(len(self.kernal)):
                     dotProd += np.dot(tempMatrix[i], self.kernal[i]) #Splits the 2d arrays into 1d ones and combines dot values. [[1, 2], [3, 4]] dot [[1, 1], [2, 2]] = 1*1 + 2*1 + 3*2 + 4*2 = [1, 2] dot [1, 1] + [3, 4] dot [2, 2]
                 row.append(float(dotProd)) #Append to row
+                startXcord += self.stride #Move to next start point
+
+            output.append(list(row))
+            startYcord += self.stride
+        return(output)
+
+class Pool2D:
+    def __init__(self, inputSizeX, inputSizeY, typePol, kX, kY, stride = 1, padding = 0):
+        assert kX > 0, "Kernal size cannot be empty"
+        assert kY > 0, "Kernal size cannot be empty"
+        assert typePol in (0, 1), "Type must be chosen. 0 = Max, 1 = Average"
+
+
+
+        self.inputSizeX = inputSizeX
+        self.inputSizeY = inputSizeY
+        self.kX = kX
+        self.kY = kY
+        self.typePol = typePol #0 for Max, 1 for average
+        self.stride = stride
+        self.type = 3 #Determines if it is a layer, an activation function, etc.
+
+        self.outputSizeX = int(((inputSizeX - kX) / stride) + 1)
+        self.outputSizeY = int(((inputSizeY - kY) / stride) + 1)
+
+    
+    def run(self, inputV):      
+        #Make list into array
+        inputV = np.array(inputV) #Makes it into a numpy array. Allows for easier matrix splitting
+
+        #Calculation
+        startXcord = 0 #Top left value of kernal for each itertion. Used to move around
+        startYcord = 0
+        output = []
+        #tempMatrix[rowStart:rowEnd, colStart:colEnd]. Here to show what each value does
+        for j in range(self.outputSizeY):
+            startXcord = 0
+            row = []
+            for i in range(self.outputSizeX):
+                #tempMatrix = inputV[startYcord:(startYcord + len(self.kernal[0])), startXcord:(startXcord + len(self.kernal))] #Temp matrix with the subset of the input that is being studied
+                tempMatrix = inputV[startYcord:(startYcord + self.kY), startXcord:(startXcord + self.kX)] #Temp matrix with the subset of the input that is being studied
+                if self.typePol == 0:
+                    row.append(float(np.max(tempMatrix)))
+                elif self.typePol == 1:
+                    row.append(float(np.mean(tempMatrix)))
+                else:
+                    assert 0 == 1, "Incorrect TypePol"
+
                 startXcord += self.stride #Move to next start point
 
             output.append(list(row))
